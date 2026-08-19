@@ -1,0 +1,32 @@
+AMOSTRA V2 — PORTAL DE TREINAMENTOS SHOPPING D
+
+Agora o ADMIN possui um campo real para selecionar arquivos.
+
+FORMATOS:
+- PowerPoint: .ppt, .pptx, .pps, .ppsx
+- Word: .doc, .docx
+- Excel: .xls, .xlsx
+- PDF: .pdf
+
+NA AMOSTRA:
+Os arquivos adicionados pelo admin são guardados no armazenamento do navegador (IndexedDB).
+Isso serve para testar a interface, adicionar e abrir arquivos neste navegador.
+
+NA VERSÃO FINAL ONLINE:
+O mesmo campo de upload será conectado ao Supabase Storage para que o arquivo fique disponível em todos os dispositivos e no link público.
+
+Também é possível:
+- trocar o arquivo de um treinamento
+- excluir treinamento e arquivo
+- editar título/descrição
+- editar/adicionar/excluir inspetores
+- editar o título "Treinamentos"
+
+
+NOVIDADE V3 — FOTOS DOS INSPETORES
+- No administrativo, cada inspetor tem o botão "Adicionar/Trocar foto".
+- Também é possível remover a foto.
+- Ao cadastrar um novo inspetor, você já pode escolher a foto.
+- A foto aparece em formato circular na frente do nome no site público.
+- Sem foto, continuam aparecendo as iniciais.
+- Para esta amostra, use imagens de até 3 MB.

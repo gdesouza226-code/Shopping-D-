@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Treinamentos | Shopping D</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#edf4f5;color:#15333d}
+.top{background:linear-gradient(135deg,#123f4b,#0a667e);padding:26px 16px 70px}
+.brand{text-align:center}.brand img{width:min(360px,90vw);border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,.16)}
+.panel{max-width:1050px;margin:-42px auto 30px;background:#fff;border-radius:20px;padding:26px;box-shadow:0 14px 40px rgba(20,55,65,.16)}
+h1{text-align:center;margin:0;color:#0f5266;font-size:clamp(30px,5vw,44px)}
+.subtitle{text-align:center;color:#607981;margin:8px 0 24px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+.inspector{border:1px solid #d7e3e6;border-radius:16px;padding:18px;background:#fff;cursor:pointer;transition:.15s}
+.inspector:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(20,55,65,.08)}
+.avatar{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:#eaf5f7;color:#0f5266;font-weight:800;font-size:20px;overflow:hidden;flex:0 0 64px}
+.avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.row{display:flex;align-items:center;gap:13px}.name{font-size:19px;font-weight:800}.muted{color:#71868d;font-size:13px;margin-top:3px}
+.training-list{display:none;margin-top:24px}.training-list.active{display:block}
+.back{display:inline-block;border:0;background:#0f5266;color:#fff;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;margin-bottom:14px}
+.training{border:1px solid #d7e3e6;border-radius:14px;padding:16px;margin-bottom:11px}
+.training h3{margin:0 0 6px;color:#163e49}.training p{margin:0 0 10px;color:#667d85}
+.filemeta{font-size:13px;color:#71868d;margin-bottom:13px}
+.actions{display:flex;gap:9px;flex-wrap:wrap}.btn{display:inline-block;text-decoration:none;padding:10px 14px;border-radius:10px;font-weight:700;border:0;cursor:pointer}
+.primary{background:#e95f17;color:#fff}.secondary{background:#0f5266;color:#fff}
+.empty{text-align:center;padding:25px;color:#71868d}
+footer{text-align:center;color:#71868d;padding:0 15px 28px;font-size:13px}
+@media(max-width:650px){.panel{margin:-42px 12px 24px;padding:18px}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="top"><div class="brand"><img src="argoplan-shoppingd.png" alt="Argoplan e Shopping D"></div></header>
+<main class="panel">
+<h1 id="pageTitle">Treinamentos</h1>
+<p class="subtitle">Selecione o inspetor para visualizar os treinamentos disponíveis.</p>
+<section id="inspectors" class="grid"></section>
+<section id="trainingList" class="training-list">
+<button id="backBtn" class="back">← Voltar</button>
+<h2 id="selectedInspector"></h2>
+<div id="trainingCards"></div>
+</section>
+</main>
+<footer>Shopping D • Argoplan • Portal de Treinamentos</footer>
+
+<script src="dados-iniciais.js"></script>
+<script>
+function getData(){
+  const saved=localStorage.getItem('shoppingD_treinamentos_demo');
+  return saved?JSON.parse(saved):window.DADOS_INICIAIS;
+}
+let data=getData();
+const inspectors=document.getElementById('inspectors');
+const list=document.getElementById('trainingList');
+const selected=document.getElementById('selectedInspector');
+const cards=document.getElementById('trainingCards');
+
+function initials(name){return name.split(' ').filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join('');}
+function openDB(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open('ShoppingDTrainingFiles',1);
+    req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains('files'))db.createObjectStore('files');};
+    req.onsuccess=()=>resolve(req.result); req.onerror=()=>reject(req.error);
+  });
+}
+async function getStoredFile(key){
+  const db=await openDB();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction('files','readonly');
+    const req=tx.objectStore('files').get(key);
+    req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+  });
+}
+async function openTraining(t,download=false){
+  if(t.fileKey){
+    try{
+      const rec=await getStoredFile(t.fileKey);
+      if(!rec || !rec.blob){alert('Arquivo não encontrado neste navegador.');return;}
+      const url=URL.createObjectURL(rec.blob);
+      const a=document.createElement('a');a.href=url;
+      if(download)a.download=rec.name||t.fileName||'treinamento';
+      else a.target='_blank';
+      document.body.appendChild(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),15000);
+    }catch(e){alert('Não foi possível abrir o arquivo armazenado.');}
+  }else if(t.file){
+    const a=document.createElement('a');a.href=t.file;
+    if(download)a.download=t.fileName||t.file;
+    else a.target='_blank';
+    document.body.appendChild(a);a.click();a.remove();
+  }else{
+    alert('Este treinamento ainda não possui arquivo.');
+  }
+}
+function renderInspectors(){
+  document.getElementById('pageTitle').textContent=data.title || 'Treinamentos';
+  inspectors.innerHTML='';
+  data.inspectors.forEach(i=>{
+    const count=data.trainings.filter(t=>t.inspectorId===i.id).length;
+    const el=document.createElement('article');el.className='inspector';
+    el.innerHTML=`<div class="row"><div class="avatar">${i.photo?`<img src="${i.photo}" alt="${i.name}">`:initials(i.name)}</div><div><div class="name">${i.name}</div><div class="muted">${count} ${count===1?'treinamento':'treinamentos'}</div></div></div>`;
+    el.addEventListener('click',()=>openInspector(i.id));inspectors.appendChild(el);
+  });
+}
+function openInspector(id){
+  const insp=data.inspectors.find(x=>x.id===id);
+  const ts=data.trainings.filter(t=>t.inspectorId===id);
+  selected.textContent=insp?insp.name:'Inspetor';cards.innerHTML='';
+  if(!ts.length)cards.innerHTML='<div class="empty">Nenhum treinamento cadastrado para este inspetor.</div>';
+  ts.forEach(t=>{
+    const el=document.createElement('article');el.className='training';
+    el.innerHTML=`<h3>${t.title}</h3><p>${t.description||''}</p>
+      <div class="filemeta"><b>Arquivo:</b> ${t.fileName||t.file||'Não informado'} ${t.fileType?'• '+t.fileType:''}</div>
+      <div class="actions"><button class="btn primary open">Visualizar / Abrir</button><button class="btn secondary download">Baixar arquivo</button></div>`;
+    el.querySelector('.open').addEventListener('click',()=>openTraining(t,false));
+    el.querySelector('.download').addEventListener('click',()=>openTraining(t,true));
+    cards.appendChild(el);
+  });
+  inspectors.style.display='none';list.classList.add('active');
+}
+document.getElementById('backBtn').addEventListener('click',()=>{list.classList.remove('active');inspectors.style.display='grid';});
+renderInspectors();
+</script>
+</body>
+</html>
