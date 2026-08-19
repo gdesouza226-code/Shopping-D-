@@ -1,29 +1,183 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Admin | Shopping D</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin Treinamentos | Shopping D</title>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#eef4f5;color:#123}.login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}.card{width:min(460px,100%);background:#fff;padding:32px;border-radius:20px;box-shadow:0 12px 35px #0002}h1{color:#07556b}.sub{color:#65777d;margin-bottom:24px}label{display:block;font-weight:700;margin:14px 0 6px}input{width:100%;padding:14px;border:1px solid #c7d6da;border-radius:10px;font-size:16px}button{width:100%;margin-top:20px;padding:14px;border:0;border-radius:10px;background:#ef5b13;color:#fff;font-size:17px;font-weight:700;cursor:pointer}#erro{display:none;margin-top:14px;padding:10px;background:#ffe9e9;color:#a00;border-radius:8px}#painel{display:none;padding:30px}header{background:#07556b;color:#fff;padding:20px;border-radius:12px}
-</style></head>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#edf3f4;color:#15333d}
+.wrap{max-width:1100px;margin:28px auto;padding:0 15px}.box{background:#fff;border-radius:16px;padding:22px;box-shadow:0 10px 35px rgba(0,0,0,.10);margin-bottom:18px}
+h1,h2{color:#0f5266;margin-top:0}.notice{background:#fff5dd;border:1px solid #efd07b;padding:13px;border-radius:10px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr auto;gap:9px}.grid4{display:grid;grid-template-columns:1fr 1.3fr 2fr auto;gap:9px}
+input,select,textarea,button{font:inherit;padding:11px;border-radius:9px}input,select,textarea{border:1px solid #c7d7db;width:100%}textarea{min-height:80px;resize:vertical}
+input[type=file]{background:#f8fbfc;border:2px dashed #b9d2d8;padding:14px}
+button{border:0;background:#0f5266;color:#fff;font-weight:700;cursor:pointer}.orange{background:#e95f17}.danger{background:#b52929}.gray{background:#6f7f85}
+.item{border:1px solid #d7e3e6;border-radius:12px;padding:13px;margin-bottom:9px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}.small{font-size:13px;color:#667d85}
+.file-box{margin-top:12px;padding:14px;border-radius:12px;background:#eef6f7}.file-box label{font-weight:700;display:block;margin-bottom:7px}.file-name{margin-top:7px;color:#0f5266;font-weight:700}
+.person-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.person-photo{width:68px;height:68px;border-radius:50%;overflow:hidden;background:#eaf5f7;display:grid;place-items:center;font-weight:800;color:#0f5266}
+.person-photo img{width:100%;height:100%;object-fit:cover}
+.photo-input{display:none}
+@media(max-width:760px){.grid,.grid4{grid-template-columns:1fr}}
+
+.login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:#edf3f4}.login-card{width:min(460px,100%);background:#fff;border-radius:16px;padding:28px;box-shadow:0 10px 35px rgba(0,0,0,.12)}.login-card h1{margin-bottom:6px}.login-card .sub{color:#667d85;margin-bottom:20px}.login-card label{display:block;font-weight:700;margin:12px 0 6px}.login-card button{width:100%;margin-top:16px}.login-error{display:none;margin-top:12px;padding:10px;border-radius:8px;background:#fde8e8;color:#a52222}.logout-bar{display:flex;justify-content:flex-end;max-width:1100px;margin:18px auto -12px;padding:0 15px}.logout-bar button{background:#6f7f85}
+</style>
+</head>
 <body>
-<section id="login" class="login"><div class="card">
-<h1>Área Administrativa</h1><div class="sub">Shopping D • Acesso restrito</div>
-<form id="formLogin">
-<label>E-mail</label><input id="email" type="email" required>
-<label>Senha</label><input id="senha" type="password" required>
-<button type="submit">Entrar</button><div id="erro">E-mail ou senha incorretos.</div>
-</form></div></section>
-<section id="painel"><header><h2>Admin | Shopping D</h2></header>
-<p>Acesso administrativo autorizado.</p>
-<button id="sair" style="max-width:160px">Sair</button>
-</section>
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <h1>Admin • Treinamentos</h1>
+    <div class="sub">Shopping D • Acesso administrativo</div>
+    <form id="loginForm">
+      <label for="adminEmail">E-mail</label>
+      <input id="adminEmail" type="email" autocomplete="username" required>
+      <label for="adminPassword">Senha</label>
+      <input id="adminPassword" type="password" autocomplete="current-password" required>
+      <button type="submit" class="orange">Entrar</button>
+      <div id="loginError" class="login-error">E-mail ou senha incorretos.</div>
+    </form>
+  </div>
+</div>
+<div id="adminApp" style="display:none">
+<div class="logout-bar"><button id="logoutBtn">Sair do administrativo</button></div>
+<div class="wrap">
+<div class="box"><h1>Admin • Treinamentos</h1>
+<div class="notice"><b>Agora possui upload de arquivo.</b> Aceita PowerPoint, Word, Excel e PDF. Nesta amostra, arquivos adicionados ficam armazenados neste navegador. Na versão final online, serão enviados para o Supabase Storage.</div>
+<label>Título principal do portal</label>
+<div class="grid"><input id="portalTitle"><button id="saveTitle">Salvar título</button><button id="resetAll" class="danger">Restaurar amostra</button></div>
+</div>
+
+<div class="box">
+<h2>Inspetores</h2>
+<p class="small">Altere nomes, adicione/exclua inspetores e coloque uma foto na frente do nome. Se não houver foto, aparecem as iniciais.</p>
+<div class="grid"><input id="newInspector" placeholder="Nome do novo inspetor"><input id="newInspectorPhoto" type="file" accept="image/*"><button id="addInspector" class="orange">Adicionar inspetor</button></div>
+<div id="inspectorsList" style="margin-top:14px"></div>
+</div>
+
+<div class="box">
+<h2>Adicionar treinamento</h2>
+<div class="grid4">
+<select id="trainingInspector"></select>
+<input id="trainingTitle" placeholder="Título do treinamento">
+<input id="trainingDescShort" placeholder="Descrição resumida">
+<button id="addTraining" class="orange">Salvar treinamento</button>
+</div>
+<div class="file-box">
+<label for="trainingFile">📎 Adicionar arquivo do treinamento</label>
+<input id="trainingFile" type="file" accept=".ppt,.pptx,.doc,.docx,.xls,.xlsx,.pdf,.pps,.ppsx">
+<div class="small">Formatos aceitos: PowerPoint (.ppt/.pptx), Word (.doc/.docx), Excel (.xls/.xlsx) e PDF.</div>
+<div id="selectedFile" class="file-name">Nenhum arquivo selecionado.</div>
+</div>
+<textarea id="trainingDesc" style="margin-top:9px" placeholder="Descrição completa / observações"></textarea>
+<div id="trainingList" style="margin-top:14px"></div>
+</div>
+</div>
+</div>
+
+<script src="dados-iniciais.js"></script>
 <script>
-const ADMIN_EMAIL="admin@shoppingd.com.br";
-const ADMIN_PASSWORD="argoplangabriel2026";
-const login=document.getElementById("login"),painel=document.getElementById("painel"),erro=document.getElementById("erro");
-function abrir(){login.style.display="none";painel.style.display="block"}
-if(sessionStorage.getItem("shoppingd_admin")==="1")abrir();
-document.getElementById("formLogin").addEventListener("submit",e=>{e.preventDefault();if(document.getElementById("email").value.trim().toLowerCase()===ADMIN_EMAIL&&document.getElementById("senha").value===ADMIN_PASSWORD){sessionStorage.setItem("shoppingd_admin","1");erro.style.display="none";abrir()}else erro.style.display="block"});
-document.getElementById("sair").onclick=()=>{sessionStorage.removeItem("shoppingd_admin");location.reload()};
-</script></body></html>
+const ADMIN_EMAIL = "admin@shoppingd.com.br";
+const ADMIN_PASSWORD = "argoplangabriel2026";
+function mostrarAdmin(){document.getElementById('loginScreen').style.display='none';document.getElementById('adminApp').style.display='block';}
+function mostrarLogin(){document.getElementById('adminApp').style.display='none';document.getElementById('loginScreen').style.display='flex';}
+if(sessionStorage.getItem('shoppingD_admin_auth')==='1') mostrarAdmin();
+document.getElementById('loginForm').addEventListener('submit',function(e){
+ e.preventDefault();
+ const email=document.getElementById('adminEmail').value.trim().toLowerCase();
+ const senha=document.getElementById('adminPassword').value;
+ if(email===ADMIN_EMAIL && senha===ADMIN_PASSWORD){sessionStorage.setItem('shoppingD_admin_auth','1');document.getElementById('loginError').style.display='none';mostrarAdmin();}
+ else document.getElementById('loginError').style.display='block';
+});
+document.getElementById('logoutBtn').addEventListener('click',function(){sessionStorage.removeItem('shoppingD_admin_auth');mostrarLogin();});
+</script>
+
+<script>
+function clone(o){return JSON.parse(JSON.stringify(o))}
+function load(){const s=localStorage.getItem('shoppingD_treinamentos_demo');return s?JSON.parse(s):clone(window.DADOS_INICIAIS)}
+let data=load();
+function save(){localStorage.setItem('shoppingD_treinamentos_demo',JSON.stringify(data));render()}
+function slug(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'-'+Date.now()}
+function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open('ShoppingDTrainingFiles',1);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains('files'))db.createObjectStore('files');};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
+async function storeFile(key,file){const db=await openDB();return new Promise((resolve,reject)=>{const tx=db.transaction('files','readwrite');tx.objectStore('files').put({blob:file,name:file.name,type:file.type,size:file.size},key);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});}
+async function deleteFile(key){if(!key)return;const db=await openDB();return new Promise((resolve,reject)=>{const tx=db.transaction('files','readwrite');tx.objectStore('files').delete(key);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});}
+function fileType(name){
+ const ext=(name.split('.').pop()||'').toLowerCase();
+ if(['ppt','pptx','pps','ppsx'].includes(ext))return 'PowerPoint';
+ if(['doc','docx'].includes(ext))return 'Word';
+ if(['xls','xlsx'].includes(ext))return 'Excel';
+ if(ext==='pdf')return 'PDF';
+ return 'Arquivo';
+}
+function initials(name){return name.split(' ').filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join('');}
+function imageToDataURL(file){
+ return new Promise((resolve,reject)=>{
+  const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(r.error);r.readAsDataURL(file);
+ });
+}
+function render(){
+ document.getElementById('portalTitle').value=data.title||'Treinamentos';
+ const il=document.getElementById('inspectorsList');il.innerHTML='';
+ data.inspectors.forEach(i=>{
+  const d=document.createElement('div');d.className='item';
+  d.innerHTML=`<div class="person-row"><div class="person-photo">${i.photo?`<img src="${i.photo}" alt="${i.name}">`:initials(i.name)}</div><div><b>${i.name}</b><div class="actions"><button data-photo="${i.id}">Adicionar/Trocar foto</button><button data-edit="${i.id}">Editar nome</button><button class="danger" data-removephoto="${i.id}">Remover foto</button><button class="danger" data-del="${i.id}">Excluir</button></div></div></div>`;
+  il.appendChild(d);
+ });
+ il.querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click',()=>editInspector(b.dataset.edit)));
+ il.querySelectorAll('[data-photo]').forEach(b=>b.addEventListener('click',()=>changeInspectorPhoto(b.dataset.photo)));
+ il.querySelectorAll('[data-removephoto]').forEach(b=>b.addEventListener('click',()=>removeInspectorPhoto(b.dataset.removephoto)));
+ il.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',()=>delInspector(b.dataset.del)));
+
+ const sel=document.getElementById('trainingInspector');sel.innerHTML='';
+ data.inspectors.forEach(i=>sel.add(new Option(i.name,i.id)));
+ const tl=document.getElementById('trainingList');tl.innerHTML='';
+ data.trainings.forEach(t=>{
+   const insp=data.inspectors.find(i=>i.id===t.inspectorId);
+   const d=document.createElement('div');d.className='item';
+   d.innerHTML=`<b>${t.title}</b><div class="small">Inspetor: ${insp?insp.name:'Não definido'}</div>
+   <div class="small">Arquivo: <b>${t.fileName||t.file||'Sem arquivo'}</b> ${t.fileType?'• '+t.fileType:''}</div>
+   <div class="small" style="margin-top:5px">${t.description||''}</div>
+   <div class="actions"><button data-tedit="${t.id}">Editar dados</button><button data-replace="${t.id}">Trocar arquivo</button><button class="danger" data-tdel="${t.id}">Excluir</button></div>`;
+   tl.appendChild(d);
+ });
+ tl.querySelectorAll('[data-tedit]').forEach(b=>b.addEventListener('click',()=>editTraining(Number(b.dataset.tedit))));
+ tl.querySelectorAll('[data-replace]').forEach(b=>b.addEventListener('click',()=>replaceFile(Number(b.dataset.replace))));
+ tl.querySelectorAll('[data-tdel]').forEach(b=>b.addEventListener('click',()=>removeTraining(Number(b.dataset.tdel))));
+}
+async function changeInspectorPhoto(id){
+ const i=data.inspectors.find(x=>x.id===id);if(!i)return;
+ const input=document.createElement('input');input.type='file';input.accept='image/*';
+ input.addEventListener('change',async()=>{const f=input.files[0];if(!f)return;if(f.size>3*1024*1024){alert('Escolha uma foto de até 3 MB.');return;}i.photo=await imageToDataURL(f);save();});
+ input.click();
+}
+function removeInspectorPhoto(id){const i=data.inspectors.find(x=>x.id===id);if(!i)return;i.photo='';save();}
+function editInspector(id){const i=data.inspectors.find(x=>x.id===id);if(!i)return;const n=prompt('Novo nome do inspetor:',i.name);if(n===null||!n.trim())return;i.name=n.trim();save();}
+function delInspector(id){if(!confirm('Excluir este inspetor e os treinamentos vinculados?'))return;data.inspectors=data.inspectors.filter(i=>i.id!==id);const ids=data.trainings.filter(t=>t.inspectorId===id);ids.forEach(t=>deleteFile(t.fileKey));data.trainings=data.trainings.filter(t=>t.inspectorId!==id);save();}
+function editTraining(id){const t=data.trainings.find(x=>x.id===id);if(!t)return;const title=prompt('Título:',t.title);if(title===null)return;const desc=prompt('Descrição:',t.description||'');if(desc===null)return;t.title=title.trim()||'Treinamentos';t.description=desc.trim();save();}
+async function removeTraining(id){if(!confirm('Excluir este treinamento e o arquivo armazenado?'))return;const t=data.trainings.find(x=>x.id===id);if(t&&t.fileKey)await deleteFile(t.fileKey);data.trainings=data.trainings.filter(x=>x.id!==id);save();}
+async function replaceFile(id){
+ const t=data.trainings.find(x=>x.id===id);if(!t)return;
+ const input=document.createElement('input');input.type='file';input.accept='.ppt,.pptx,.doc,.docx,.xls,.xlsx,.pdf,.pps,.ppsx';
+ input.addEventListener('change',async()=>{const file=input.files[0];if(!file)return;const key='training-file-'+id;if(t.fileKey)await deleteFile(t.fileKey);await storeFile(key,file);t.fileKey=key;t.file='';t.fileName=file.name;t.fileType=fileType(file.name);save();});
+ input.click();
+}
+document.getElementById('trainingFile').addEventListener('change',e=>{const f=e.target.files[0];document.getElementById('selectedFile').textContent=f?`Selecionado: ${f.name} (${(f.size/1024/1024).toFixed(1)} MB)`:'Nenhum arquivo selecionado.'});
+document.getElementById('saveTitle').addEventListener('click',()=>{data.title=document.getElementById('portalTitle').value.trim()||'Treinamentos';save()});
+document.getElementById('resetAll').addEventListener('click',()=>{if(confirm('Restaurar todos os dados da amostra?')){localStorage.removeItem('shoppingD_treinamentos_demo');data=clone(window.DADOS_INICIAIS);render()}});
+document.getElementById('addInspector').addEventListener('click',async()=>{const n=document.getElementById('newInspector').value.trim();if(!n)return;const f=document.getElementById('newInspectorPhoto').files[0];let photo='';if(f){if(f.size>3*1024*1024){alert('Escolha uma foto de até 3 MB.');return;}photo=await imageToDataURL(f);}data.inspectors.push({id:slug(n),name:n,photo});document.getElementById('newInspector').value='';document.getElementById('newInspectorPhoto').value='';save()});
+document.getElementById('addTraining').addEventListener('click',async()=>{
+ const inspectorId=document.getElementById('trainingInspector').value;
+ const title=document.getElementById('trainingTitle').value.trim()||'Treinamentos';
+ const desc1=document.getElementById('trainingDescShort').value.trim();
+ const desc2=document.getElementById('trainingDesc').value.trim();
+ const file=document.getElementById('trainingFile').files[0];
+ if(!inspectorId){alert('Selecione um inspetor.');return;}
+ if(!file){alert('Selecione um arquivo PowerPoint, Word, Excel ou PDF.');return;}
+ const id=Date.now(), key='training-file-'+id;
+ try{await storeFile(key,file);}catch(e){alert('Não foi possível armazenar o arquivo neste navegador.');return;}
+ data.trainings.push({id,inspectorId,title,description:[desc1,desc2].filter(Boolean).join(' — '),file:'',fileKey:key,fileName:file.name,fileType:fileType(file.name)});
+ document.getElementById('trainingTitle').value='';document.getElementById('trainingDescShort').value='';document.getElementById('trainingDesc').value='';document.getElementById('trainingFile').value='';document.getElementById('selectedFile').textContent='Nenhum arquivo selecionado.';save();
+});
+render();
+</script>
+</body>
+</html>
