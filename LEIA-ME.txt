@@ -8,12 +8,11 @@ FORMATOS:
 - Excel: .xls, .xlsx
 - PDF: .pdf
 
-CONFIGURAÇÃO ONLINE (OBRIGATÓRIA):
-1. No Supabase, abra SQL Editor, cole o conteúdo de supabase-setup.sql e execute.
-2. Em Authentication > Users, crie o usuário admin@shoppingd.com.br com sua senha administrativa.
-3. Em Project Settings > API, copie a Project URL e a chave anon/public.
-4. Abra supabase-config.js e cole esses dois valores.
-5. Envie TODOS os arquivos desta pasta ao GitHub, substituindo os antigos.
+CONFIGURAÇÃO ONLINE:
+- A URL e a chave pública do Supabase já estão preenchidas em supabase-config.js.
+- A tabela portal_config já foi localizada no projeto.
+- No Supabase, abra Authentication > Users e confirme o e-mail do usuário admin@shoppingd.com.br caso ele apareça como não confirmado.
+- Envie TODOS os arquivos desta pasta ao GitHub, substituindo os antigos.
 
 Depois disso, alterações feitas no admin ficam no Supabase e aparecem no link público em qualquer aparelho. Se uma página já estiver aberta, basta atualizá-la.
 
