@@ -6,6 +6,9 @@ create table if not exists public.portal_config (
 
 alter table public.portal_config enable row level security;
 
+drop policy if exists "Leitura publica do portal" on public.portal_config;
+drop policy if exists "Administradores atualizam o portal" on public.portal_config;
+
 create policy "Leitura publica do portal"
 on public.portal_config for select
 to anon, authenticated
@@ -20,6 +23,11 @@ with check (true);
 insert into storage.buckets (id, name, public)
 values ('treinamentos', 'treinamentos', true)
 on conflict (id) do update set public = true;
+
+drop policy if exists "Arquivos publicos para leitura" on storage.objects;
+drop policy if exists "Administradores enviam arquivos" on storage.objects;
+drop policy if exists "Administradores alteram arquivos" on storage.objects;
+drop policy if exists "Administradores excluem arquivos" on storage.objects;
 
 create policy "Arquivos publicos para leitura"
 on storage.objects for select
