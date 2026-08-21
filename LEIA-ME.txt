@@ -8,12 +8,14 @@ FORMATOS:
 - Excel: .xls, .xlsx
 - PDF: .pdf
 
-NA AMOSTRA:
-Os arquivos adicionados pelo admin são guardados no armazenamento do navegador (IndexedDB).
-Isso serve para testar a interface, adicionar e abrir arquivos neste navegador.
+CONFIGURAÇÃO ONLINE (OBRIGATÓRIA):
+1. No Supabase, abra SQL Editor, cole o conteúdo de supabase-setup.sql e execute.
+2. Em Authentication > Users, crie o usuário admin@shoppingd.com.br com sua senha administrativa.
+3. Em Project Settings > API, copie a Project URL e a chave anon/public.
+4. Abra supabase-config.js e cole esses dois valores.
+5. Envie TODOS os arquivos desta pasta ao GitHub, substituindo os antigos.
 
-NA VERSÃO FINAL ONLINE:
-O mesmo campo de upload será conectado ao Supabase Storage para que o arquivo fique disponível em todos os dispositivos e no link público.
+Depois disso, alterações feitas no admin ficam no Supabase e aparecem no link público em qualquer aparelho. Se uma página já estiver aberta, basta atualizá-la.
 
 Também é possível:
 - trocar o arquivo de um treinamento

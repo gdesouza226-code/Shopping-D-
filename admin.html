@@ -42,7 +42,7 @@ button{border:0;background:#0f5266;color:#fff;font-weight:700;cursor:pointer}.or
 <div class="logout-bar"><button id="logoutBtn">Sair do administrativo</button></div>
 <div class="wrap">
 <div class="box"><h1>Admin • Treinamentos</h1>
-<div class="notice"><b>Agora possui upload de arquivo.</b> Aceita PowerPoint, Word, Excel e PDF. Nesta amostra, arquivos adicionados ficam armazenados neste navegador. Na versão final online, serão enviados para o Supabase Storage.</div>
+<div class="notice" id="cloudStatus"><b>Dados online:</b> conectando ao Supabase...</div>
 <label>Título principal do portal</label>
 <div class="grid"><input id="portalTitle"><button id="saveTitle">Salvar título</button><button id="resetAll" class="danger">Restaurar amostra</button></div>
 </div>
@@ -74,32 +74,33 @@ button{border:0;background:#0f5266;color:#fff;font-weight:700;cursor:pointer}.or
 </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="dados-iniciais.js"></script>
+<script src="supabase-config.js"></script>
+<script src="supabase-data.js"></script>
 <script>
-const ADMIN_EMAIL = "admin@shoppingd.com.br";
-const ADMIN_PASSWORD = "argoplangabriel2026";
 function mostrarAdmin(){document.getElementById('loginScreen').style.display='none';document.getElementById('adminApp').style.display='block';}
 function mostrarLogin(){document.getElementById('adminApp').style.display='none';document.getElementById('loginScreen').style.display='flex';}
-if(sessionStorage.getItem('shoppingD_admin_auth')==='1') mostrarAdmin();
-document.getElementById('loginForm').addEventListener('submit',function(e){
+if(portalCloud.configured) portalCloud.client.auth.getSession().then(({data})=>{if(data.session){mostrarAdmin();iniciarAdmin();}});
+document.getElementById('loginForm').addEventListener('submit',async function(e){
  e.preventDefault();
  const email=document.getElementById('adminEmail').value.trim().toLowerCase();
  const senha=document.getElementById('adminPassword').value;
- if(email===ADMIN_EMAIL && senha===ADMIN_PASSWORD){sessionStorage.setItem('shoppingD_admin_auth','1');document.getElementById('loginError').style.display='none';mostrarAdmin();}
- else document.getElementById('loginError').style.display='block';
+ if(!portalCloud.configured){document.getElementById('loginError').textContent='Configure o Supabase no arquivo supabase-config.js.';document.getElementById('loginError').style.display='block';return;}
+ const {error}=await portalCloud.client.auth.signInWithPassword({email,password:senha});
+ if(!error){document.getElementById('loginError').style.display='none';mostrarAdmin();await iniciarAdmin();}
+ else{document.getElementById('loginError').textContent='E-mail ou senha incorretos, ou usuário não criado no Supabase.';document.getElementById('loginError').style.display='block';}
 });
-document.getElementById('logoutBtn').addEventListener('click',function(){sessionStorage.removeItem('shoppingD_admin_auth');mostrarLogin();});
+document.getElementById('logoutBtn').addEventListener('click',async function(){await portalCloud.client?.auth.signOut();mostrarLogin();});
 </script>
 
 <script>
 function clone(o){return JSON.parse(JSON.stringify(o))}
-function load(){const s=localStorage.getItem('shoppingD_treinamentos_demo');return s?JSON.parse(s):clone(window.DADOS_INICIAIS)}
-let data=load();
-function save(){localStorage.setItem('shoppingD_treinamentos_demo',JSON.stringify(data));render()}
+let data=clone(window.DADOS_INICIAIS),adminStarted=false;
+async function iniciarAdmin(){if(adminStarted)return;adminStarted=true;try{data=await portalCloud.load();document.getElementById('cloudStatus').innerHTML='<b>Dados online:</b> conectado. As alterações serão vistas no link público em qualquer aparelho.';render();}catch(e){adminStarted=false;document.getElementById('cloudStatus').textContent='Erro ao carregar dados online: '+e.message;alert('Não foi possível carregar os dados online. Confira a configuração do Supabase.');}}
+async function save(){try{await portalCloud.save(data);render();}catch(e){alert('Não foi possível salvar online: '+e.message);throw e;}}
 function slug(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'-'+Date.now()}
-function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open('ShoppingDTrainingFiles',1);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains('files'))db.createObjectStore('files');};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
-async function storeFile(key,file){const db=await openDB();return new Promise((resolve,reject)=>{const tx=db.transaction('files','readwrite');tx.objectStore('files').put({blob:file,name:file.name,type:file.type,size:file.size},key);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});}
-async function deleteFile(key){if(!key)return;const db=await openDB();return new Promise((resolve,reject)=>{const tx=db.transaction('files','readwrite');tx.objectStore('files').delete(key);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});}
+async function deleteFile(path){if(path)await portalCloud.remove(path);}
 function fileType(name){
  const ext=(name.split('.').pop()||'').toLowerCase();
  if(['ppt','pptx','pps','ppsx'].includes(ext))return 'PowerPoint';
@@ -146,24 +147,24 @@ function render(){
 async function changeInspectorPhoto(id){
  const i=data.inspectors.find(x=>x.id===id);if(!i)return;
  const input=document.createElement('input');input.type='file';input.accept='image/*';
- input.addEventListener('change',async()=>{const f=input.files[0];if(!f)return;if(f.size>3*1024*1024){alert('Escolha uma foto de até 3 MB.');return;}i.photo=await imageToDataURL(f);save();});
+ input.addEventListener('change',async()=>{const f=input.files[0];if(!f)return;if(f.size>3*1024*1024){alert('Escolha uma foto de até 3 MB.');return;}try{const old=i.photoPath;const sent=await portalCloud.upload(f,'fotos');i.photo=sent.url;i.photoPath=sent.path;await save();if(old)await deleteFile(old);}catch(e){alert('Erro ao enviar foto: '+e.message);}});
  input.click();
 }
-function removeInspectorPhoto(id){const i=data.inspectors.find(x=>x.id===id);if(!i)return;i.photo='';save();}
+async function removeInspectorPhoto(id){const i=data.inspectors.find(x=>x.id===id);if(!i)return;const old=i.photoPath;i.photo='';i.photoPath='';await save();if(old)await deleteFile(old);}
 function editInspector(id){const i=data.inspectors.find(x=>x.id===id);if(!i)return;const n=prompt('Novo nome do inspetor:',i.name);if(n===null||!n.trim())return;i.name=n.trim();save();}
-function delInspector(id){if(!confirm('Excluir este inspetor e os treinamentos vinculados?'))return;data.inspectors=data.inspectors.filter(i=>i.id!==id);const ids=data.trainings.filter(t=>t.inspectorId===id);ids.forEach(t=>deleteFile(t.fileKey));data.trainings=data.trainings.filter(t=>t.inspectorId!==id);save();}
+async function delInspector(id){if(!confirm('Excluir este inspetor e os treinamentos vinculados?'))return;const itens=data.trainings.filter(t=>t.inspectorId===id);for(const t of itens)await deleteFile(t.storagePath);data.inspectors=data.inspectors.filter(i=>i.id!==id);data.trainings=data.trainings.filter(t=>t.inspectorId!==id);await save();}
 function editTraining(id){const t=data.trainings.find(x=>x.id===id);if(!t)return;const title=prompt('Título:',t.title);if(title===null)return;const desc=prompt('Descrição:',t.description||'');if(desc===null)return;t.title=title.trim()||'Treinamentos';t.description=desc.trim();save();}
-async function removeTraining(id){if(!confirm('Excluir este treinamento e o arquivo armazenado?'))return;const t=data.trainings.find(x=>x.id===id);if(t&&t.fileKey)await deleteFile(t.fileKey);data.trainings=data.trainings.filter(x=>x.id!==id);save();}
+async function removeTraining(id){if(!confirm('Excluir este treinamento e o arquivo armazenado?'))return;const t=data.trainings.find(x=>x.id===id);if(t?.storagePath)await deleteFile(t.storagePath);data.trainings=data.trainings.filter(x=>x.id!==id);await save();}
 async function replaceFile(id){
  const t=data.trainings.find(x=>x.id===id);if(!t)return;
  const input=document.createElement('input');input.type='file';input.accept='.ppt,.pptx,.doc,.docx,.xls,.xlsx,.pdf,.pps,.ppsx';
- input.addEventListener('change',async()=>{const file=input.files[0];if(!file)return;const key='training-file-'+id;if(t.fileKey)await deleteFile(t.fileKey);await storeFile(key,file);t.fileKey=key;t.file='';t.fileName=file.name;t.fileType=fileType(file.name);save();});
+ input.addEventListener('change',async()=>{const file=input.files[0];if(!file)return;try{const old=t.storagePath;const sent=await portalCloud.upload(file,'arquivos');t.file=sent.url;t.storagePath=sent.path;t.fileKey=null;t.fileName=file.name;t.fileType=fileType(file.name);await save();if(old)await deleteFile(old);}catch(e){alert('Erro ao trocar arquivo: '+e.message);}});
  input.click();
 }
 document.getElementById('trainingFile').addEventListener('change',e=>{const f=e.target.files[0];document.getElementById('selectedFile').textContent=f?`Selecionado: ${f.name} (${(f.size/1024/1024).toFixed(1)} MB)`:'Nenhum arquivo selecionado.'});
 document.getElementById('saveTitle').addEventListener('click',()=>{data.title=document.getElementById('portalTitle').value.trim()||'Treinamentos';save()});
-document.getElementById('resetAll').addEventListener('click',()=>{if(confirm('Restaurar todos os dados da amostra?')){localStorage.removeItem('shoppingD_treinamentos_demo');data=clone(window.DADOS_INICIAIS);render()}});
-document.getElementById('addInspector').addEventListener('click',async()=>{const n=document.getElementById('newInspector').value.trim();if(!n)return;const f=document.getElementById('newInspectorPhoto').files[0];let photo='';if(f){if(f.size>3*1024*1024){alert('Escolha uma foto de até 3 MB.');return;}photo=await imageToDataURL(f);}data.inspectors.push({id:slug(n),name:n,photo});document.getElementById('newInspector').value='';document.getElementById('newInspectorPhoto').value='';save()});
+document.getElementById('resetAll').addEventListener('click',async()=>{if(confirm('Restaurar todos os dados da amostra?')){data=clone(window.DADOS_INICIAIS);await save();}});
+document.getElementById('addInspector').addEventListener('click',async()=>{const n=document.getElementById('newInspector').value.trim();if(!n)return;const f=document.getElementById('newInspectorPhoto').files[0];let photo='',photoPath='';if(f){if(f.size>3*1024*1024){alert('Escolha uma foto de até 3 MB.');return;}try{const sent=await portalCloud.upload(f,'fotos');photo=sent.url;photoPath=sent.path;}catch(e){alert('Erro ao enviar foto: '+e.message);return;}}data.inspectors.push({id:slug(n),name:n,photo,photoPath});document.getElementById('newInspector').value='';document.getElementById('newInspectorPhoto').value='';await save();});
 document.getElementById('addTraining').addEventListener('click',async()=>{
  const inspectorId=document.getElementById('trainingInspector').value;
  const title=document.getElementById('trainingTitle').value.trim()||'Treinamentos';
@@ -172,9 +173,9 @@ document.getElementById('addTraining').addEventListener('click',async()=>{
  const file=document.getElementById('trainingFile').files[0];
  if(!inspectorId){alert('Selecione um inspetor.');return;}
  if(!file){alert('Selecione um arquivo PowerPoint, Word, Excel ou PDF.');return;}
- const id=Date.now(), key='training-file-'+id;
- try{await storeFile(key,file);}catch(e){alert('Não foi possível armazenar o arquivo neste navegador.');return;}
- data.trainings.push({id,inspectorId,title,description:[desc1,desc2].filter(Boolean).join(' — '),file:'',fileKey:key,fileName:file.name,fileType:fileType(file.name)});
+ const id=Date.now();let sent;
+ try{sent=await portalCloud.upload(file,'arquivos');}catch(e){alert('Não foi possível enviar o arquivo: '+e.message);return;}
+ data.trainings.push({id,inspectorId,title,description:[desc1,desc2].filter(Boolean).join(' — '),file:sent.url,storagePath:sent.path,fileKey:null,fileName:file.name,fileType:fileType(file.name)});
  document.getElementById('trainingTitle').value='';document.getElementById('trainingDescShort').value='';document.getElementById('trainingDesc').value='';document.getElementById('trainingFile').value='';document.getElementById('selectedFile').textContent='Nenhum arquivo selecionado.';save();
 });
 render();

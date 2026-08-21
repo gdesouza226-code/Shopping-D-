@@ -44,47 +44,20 @@ footer{text-align:center;color:#71868d;padding:0 15px 28px;font-size:13px}
 </main>
 <footer>Shopping D • Argoplan • Portal de Treinamentos</footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="dados-iniciais.js"></script>
+<script src="supabase-config.js"></script>
+<script src="supabase-data.js"></script>
 <script>
-function getData(){
-  const saved=localStorage.getItem('shoppingD_treinamentos_demo');
-  return saved?JSON.parse(saved):window.DADOS_INICIAIS;
-}
-let data=getData();
+let data=window.DADOS_INICIAIS;
 const inspectors=document.getElementById('inspectors');
 const list=document.getElementById('trainingList');
 const selected=document.getElementById('selectedInspector');
 const cards=document.getElementById('trainingCards');
 
 function initials(name){return name.split(' ').filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join('');}
-function openDB(){
-  return new Promise((resolve,reject)=>{
-    const req=indexedDB.open('ShoppingDTrainingFiles',1);
-    req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains('files'))db.createObjectStore('files');};
-    req.onsuccess=()=>resolve(req.result); req.onerror=()=>reject(req.error);
-  });
-}
-async function getStoredFile(key){
-  const db=await openDB();
-  return new Promise((resolve,reject)=>{
-    const tx=db.transaction('files','readonly');
-    const req=tx.objectStore('files').get(key);
-    req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
-  });
-}
 async function openTraining(t,download=false){
-  if(t.fileKey){
-    try{
-      const rec=await getStoredFile(t.fileKey);
-      if(!rec || !rec.blob){alert('Arquivo não encontrado neste navegador.');return;}
-      const url=URL.createObjectURL(rec.blob);
-      const a=document.createElement('a');a.href=url;
-      if(download)a.download=rec.name||t.fileName||'treinamento';
-      else a.target='_blank';
-      document.body.appendChild(a);a.click();a.remove();
-      setTimeout(()=>URL.revokeObjectURL(url),15000);
-    }catch(e){alert('Não foi possível abrir o arquivo armazenado.');}
-  }else if(t.file){
+  if(t.file){
     const a=document.createElement('a');a.href=t.file;
     if(download)a.download=t.fileName||t.file;
     else a.target='_blank';
@@ -120,7 +93,12 @@ function openInspector(id){
   inspectors.style.display='none';list.classList.add('active');
 }
 document.getElementById('backBtn').addEventListener('click',()=>{list.classList.remove('active');inspectors.style.display='grid';});
-renderInspectors();
+async function iniciar(){
+ try{if(portalCloud.configured)data=await portalCloud.load();else console.warn('Supabase não configurado; exibindo dados iniciais.');}
+ catch(e){console.error(e);alert('Não foi possível buscar as atualizações. Tente recarregar a página.');}
+ renderInspectors();
+}
+iniciar();
 </script>
 </body>
 </html>
